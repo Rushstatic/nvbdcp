@@ -10,6 +10,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.core.entry.entryModelOf
+import com.patrykandpatrick.vico.core.entry.entryOf
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,18 +76,20 @@ fun DashboardScreen(viewModel: MainViewModel) {
                 )
             }
             
-            // Simplified Chart representation since we don't have a chart library installed
-            Card(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                ) {
-                    Text("Chart Visualization", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(16.dp))
-                    Text("Active: $activeSamples ($activePercent%)", color = MaterialTheme.colorScheme.primary)
-                    Text("Passive: $passiveSamples ($passivePercent%)", color = MaterialTheme.colorScheme.secondary)
-                }
+            // Generate mock data for the 30-day trend chart
+            val positiveEntries = remember { List(30) { entryOf(it, Random.nextInt(0, 5)) } }
+            val negativeEntries = remember { List(30) { entryOf(it, Random.nextInt(10, 40)) } }
+            val chartEntryModel = remember(positiveEntries, negativeEntries) { entryModelOf(positiveEntries, negativeEntries) }
+
+            Text("30-Day Trend (Positives vs Negatives)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+            Card(modifier = Modifier.fillMaxWidth().height(250.dp)) {
+                Chart(
+                    chart = lineChart(),
+                    model = chartEntryModel,
+                    startAxis = rememberStartAxis(),
+                    bottomAxis = rememberBottomAxis(),
+                    modifier = Modifier.fillMaxSize().padding(16.dp)
+                )
             }
         }
     }

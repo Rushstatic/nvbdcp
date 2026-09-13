@@ -34,6 +34,20 @@ fun ReportsScreen(viewModel: MainViewModel) {
             }
         }
     }
+    
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+                try {
+                    Toast.makeText(context, "Importing data...", Toast.LENGTH_SHORT).show()
+                    val count = viewModel.importCsvData(it, context)
+                    Toast.makeText(context, "Successfully imported $count records!", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     var webViewRef by remember { mutableStateOf<android.webkit.WebView?>(null) }
 
@@ -49,6 +63,14 @@ fun ReportsScreen(viewModel: MainViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            ReportCard(
+                icon = "📂",
+                title = "डेटा इम्पोर्ट (Import from CSV)",
+                desc = "जुन्या Excel/CSV फाईलमधून डेटा सिस्टीममध्ये लोड करा.",
+                onClick = {
+                    importLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "*/*"))
+                }
+            )
             ReportCard(
                 icon = "💾",
                 title = "डेटा एक्सपोर्ट (Save to Google Drive)",

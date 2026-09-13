@@ -14,6 +14,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import android.net.Uri
+import android.content.Context
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -118,5 +122,72 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         
         return MonthlyReportGenerator.generateHtml(monthStr, thisMonthReports, villagesMap)
+    }
+
+    suspend fun importCsvData(uri: Uri, context: Context): Int {
+        return withContext(Dispatchers.IO) {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val reader = inputStream?.bufferedReader()
+            val lines = reader?.readLines() ?: return@withContext 0
+            if (lines.size <= 1) return@withContext 0
+            
+            val dataLines = lines.drop(1)
+            
+            val reportMap = mutableMapOf<String, ReportEntry>()
+            val villageMap = mutableMapOf<String, MutableList<VillageEntry>>()
+            
+            var importedCount = 0
+
+            for (line in dataLines) {
+                val parts = line.split(",")
+                if (parts.size >= 9) {
+                    val dateStr = parts[0]
+                    val upkendra = parts[1]
+                    val employeeName = parts[2]
+                    val designation = parts[3]
+                    val bsCode = parts[4]
+                    val bundleNo = parts[5]
+                    val pasun = parts[6].toIntOrNull() ?: 0
+                    val paraynt = parts[7].toIntOrNull() ?: 0
+                    val total = parts[8].toIntOrNull() ?: 0
+                    
+                    val sdf = SimpleDateFormat("MMMM yyyy", Locale.US)
+                    var monthStr = _currentMonthStr.value
+                    try {
+                        val parsedDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(dateStr)
+                        if (parsedDate != null) {
+                           monthStr = sdf.format(parsedDate)
+                        }
+                    } catch(e: Exception) {}
+                    
+                    val key = "$dateStr-$upkendra-$employeeName-$bundleNo"
+                    if (!reportMap.containsKey(key)) {
+                        reportMap[key] = ReportEntry(
+                            dateStr = dateStr, upkendra = upkendra, employeeName = employeeName,
+                            designation = designation, bsCode = bsCode, bundleNo = bundleNo,
+                            pasun = pasun, paraynt = paraynt, total = total, monthStr = monthStr
+                        )
+                        villageMap[key] = mutableListOf()
+                        importedCount++
+                    }
+                    
+                    if (parts.size >= 13 && parts[9].isNotEmpty()) {
+                        val villageName = parts[9]
+                        val vSamples = parts[10].toIntOrNull() ?: 0
+                        val vMale = parts[11].toIntOrNull() ?: 0
+                        val vFemale = parts[12].toIntOrNull() ?: 0
+                        villageMap[key]?.add(
+                            VillageEntry(villageName = villageName, sampleCount = vSamples, maleCount = vMale, femaleCount = vFemale)
+                        )
+                    }
+                }
+            }
+            
+            for ((key, report) in reportMap) {
+                val villages = villageMap[key] ?: emptyList()
+                repository.insertFullReport(report, villages)
+            }
+            importedCount
+        }
     }
 }
