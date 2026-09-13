@@ -1,15 +1,20 @@
 package com.example.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.theme.*
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -60,19 +65,22 @@ fun DashboardScreen(viewModel: MainViewModel) {
                     title = "एकूण नमुने",
                     value = totalSamples.toString(),
                     subtitle = "Total Samples",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    gradient = Brush.linearGradient(colors = listOf(GradientBlue1, GradientBlue2))
                 )
                 StatCard(
                     title = "ॲक्टिव्ह",
                     value = activeSamples.toString(),
                     subtitle = "$activePercent%",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    gradient = Brush.linearGradient(colors = listOf(GradientTeal1, GradientTeal2))
                 )
                 StatCard(
                     title = "पॅसिव्ह",
                     value = passiveSamples.toString(),
                     subtitle = "$passivePercent%",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    gradient = Brush.linearGradient(colors = listOf(GradientOrange1, GradientOrange2))
                 )
             }
             
@@ -96,17 +104,24 @@ fun DashboardScreen(viewModel: MainViewModel) {
 }
 
 @Composable
-fun StatCard(title: String, value: String, subtitle: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier) {
+fun StatCard(title: String, value: String, subtitle: String, modifier: Modifier = Modifier, gradient: Brush) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .background(gradient)
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
         ) {
-            Text(title, style = MaterialTheme.typography.labelMedium)
+            Text(title, style = MaterialTheme.typography.labelMedium, color = Color.White)
             Spacer(Modifier.height(8.dp))
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(Modifier.height(8.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodySmall)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
         }
     }
 }
