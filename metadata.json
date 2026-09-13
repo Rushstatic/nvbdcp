@@ -1,0 +1,6 @@
+{
+  "name": "Malaria Report",
+  "description": "A comprehensive Android app for Malaria sample tracking and reporting, based on a custom App Script system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
