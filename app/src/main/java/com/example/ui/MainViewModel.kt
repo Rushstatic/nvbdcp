@@ -36,6 +36,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
 
+    private val prefs = application.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+    private val _isSynced = MutableStateFlow(prefs.getBoolean("is_synced", true))
+    val isSynced: StateFlow<Boolean> = _isSynced
+
+    private fun markAsModified() {
+        prefs.edit().putBoolean("is_synced", false).apply()
+        _isSynced.value = false
+    }
+
+    fun markAsSynced() {
+        prefs.edit().putBoolean("is_synced", true).apply()
+        _isSynced.value = true
+    }
+
     private val _currentMonthStr = MutableStateFlow(getCurrentMonthString())
     val currentMonthStr: StateFlow<String> = _currentMonthStr
 
@@ -83,6 +97,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 monthStr = _currentMonthStr.value
             )
             repository.insertFullReport(report, villages)
+            markAsModified()
         }
     }
 
@@ -186,6 +201,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             for ((key, report) in reportMap) {
                 val villages = villageMap[key] ?: emptyList()
                 repository.insertFullReport(report, villages)
+            }
+            if (importedCount > 0) {
+                markAsModified()
             }
             importedCount
         }

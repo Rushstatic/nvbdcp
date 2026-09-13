@@ -21,10 +21,16 @@ fun DataEntryScreen(viewModel: MainViewModel) {
     val employees by viewModel.allEmployees.collectAsStateWithLifecycle()
     
     var dateStr by remember { mutableStateOf(SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())) }
+    var selectedUpkendra by remember { mutableStateOf<String?>(null) }
     var selectedEmployee by remember { mutableStateOf<com.example.data.Employee?>(null) }
     var bundleNo by remember { mutableStateOf("") }
     var pasun by remember { mutableStateOf("") }
     var paraynt by remember { mutableStateOf("") }
+    
+    val upkendras = remember(employees) { employees.map { it.upkendra }.distinct().sorted() }
+    val filteredEmployees = remember(employees, selectedUpkendra) {
+        if (selectedUpkendra != null) employees.filter { it.upkendra == selectedUpkendra } else employees
+    }
     
     val total = if (pasun.isNotEmpty() && paraynt.isNotEmpty()) {
         (paraynt.toIntOrNull() ?: 0) - (pasun.toIntOrNull() ?: 0) + 1
@@ -36,9 +42,14 @@ fun DataEntryScreen(viewModel: MainViewModel) {
     var sampleCount by remember { mutableStateOf("") }
     var maleCount by remember { mutableStateOf("") }
 
+    val isSynced by viewModel.isSynced.collectAsStateWithLifecycle()
+
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("नवीन रक्त नमुने नोंदणी") })
+            TopAppBar(
+                title = { Text("नवीन रक्त नमुने नोंदणी") },
+                actions = { SyncStatusIcon(isSynced) }
+            )
         }
     ) { padding ->
         Column(
@@ -63,32 +74,75 @@ fun DataEntryScreen(viewModel: MainViewModel) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Simplification: dropdown simulated with buttons or just picking first for now
-            // In a real app we'd use DropdownMenu
-            var expanded by remember { mutableStateOf(false) }
+            // Subcenter Dropdown
+            var expandedUpkendra by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+                expanded = expandedUpkendra,
+                onExpandedChange = { expandedUpkendra = !expandedUpkendra }
+            ) {
+                OutlinedTextField(
+                    value = selectedUpkendra ?: "Select Subcenter",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("उपकेंद्र निवडा") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedUpkendra) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedUpkendra,
+                    onDismissRequest = { expandedUpkendra = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("All Subcenters") },
+                        onClick = {
+                            selectedUpkendra = null
+                            selectedEmployee = null
+                            expandedUpkendra = false
+                        }
+                    )
+                    upkendras.forEach { upkendra ->
+                        DropdownMenuItem(
+                            text = { Text(upkendra) },
+                            onClick = {
+                                selectedUpkendra = upkendra
+                                selectedEmployee = null // reset employee when subcenter changes
+                                expandedUpkendra = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Employee Dropdown
+            var expandedEmployee by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expandedEmployee,
+                onExpandedChange = { expandedEmployee = !expandedEmployee }
             ) {
                 OutlinedTextField(
                     value = selectedEmployee?.name ?: "Select Employee",
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("कर्मचारी नाव") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedEmployee) },
                     colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
                 ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    expanded = expandedEmployee,
+                    onDismissRequest = { expandedEmployee = false }
                 ) {
-                    employees.forEach { emp ->
+                    filteredEmployees.forEach { emp ->
                         DropdownMenuItem(
                             text = { Text("${emp.name} - ${emp.upkendra}") },
                             onClick = {
                                 selectedEmployee = emp
-                                expanded = false
+                                // auto-select upkendra if it wasn't selected
+                                if (selectedUpkendra == null) {
+                                    selectedUpkendra = emp.upkendra
+                                }
+                                expandedEmployee = false
                             }
                         )
                     }

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +30,7 @@ fun ReportsScreen(viewModel: MainViewModel) {
                     context.contentResolver.openOutputStream(it)?.use { out ->
                         out.write(csvData.toByteArray())
                     }
+                    viewModel.markAsSynced()
                     Toast.makeText(context, "Data saved successfully to Drive/Device!", Toast.LENGTH_LONG).show()
                 } catch (e: Exception) {
                     Toast.makeText(context, "Failed to save data: ${e.message}", Toast.LENGTH_LONG).show()
@@ -52,10 +54,14 @@ fun ReportsScreen(viewModel: MainViewModel) {
     }
 
     var webViewRef by remember { mutableStateOf<android.webkit.WebView?>(null) }
+    val isSynced by viewModel.isSynced.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("उपलब्ध अहवालांची यादी") })
+            TopAppBar(
+                title = { Text("उपलब्ध अहवालांची यादी") },
+                actions = { SyncStatusIcon(isSynced) }
+            )
         }
     ) { padding ->
         Column(

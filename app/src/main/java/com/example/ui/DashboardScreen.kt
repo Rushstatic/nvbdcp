@@ -45,9 +45,14 @@ fun DashboardScreen(viewModel: MainViewModel) {
     val activePercent = if (totalSamples > 0) (activeSamples * 100) / totalSamples else 0
     val passivePercent = if (totalSamples > 0) (passiveSamples * 100) / totalSamples else 0
 
+    val isSynced by viewModel.isSynced.collectAsStateWithLifecycle()
+
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("मासिक आढावा (चालू महिना)") })
+            TopAppBar(
+                title = { Text("मासिक आढावा (चालू महिना)") },
+                actions = { SyncStatusIcon(isSynced) }
+            )
         }
     ) { padding ->
         Column(
